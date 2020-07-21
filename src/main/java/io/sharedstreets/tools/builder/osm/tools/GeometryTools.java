@@ -6,6 +6,9 @@ import com.esri.core.geometry.Geometry;
 import com.esri.core.geometry.GeometryEngine;
 import com.esri.core.geometry.Polyline;
 
+import io.sharedstreets.tools.builder.model.WaySection;
+import io.sharedstreets.tools.builder.osm.model.NodePosition;
+
 public class GeometryTools {
 
     public static String toAscii(byte[] bytes) throws Exception {
@@ -27,4 +30,28 @@ public class GeometryTools {
         return (Polyline) GeometryEngine.geometryFromEsriShape(fromAscii(ascii), Geometry.Type.Polyline);
     }
 
+    public static Geometry constructGeometryTool(WaySection[] waySections) {
+
+        Polyline line = new Polyline();
+
+        boolean firstPosition = true;
+
+        long lastNodeId = -1;
+        for (WaySection section : waySections) {
+            for (NodePosition node : section.nodes) {
+                if (firstPosition == true) {
+                    line.startPath(node.lon, node.lat);
+                    firstPosition = false;
+                } else {
+                    // don't write duplicate nodes twice for adjoining way sections
+                    if (lastNodeId != node.nodeId)
+                        line.lineTo(node.lon, node.lat);
+                }
+
+                lastNodeId = node.nodeId;
+            }
+        }
+
+        return line;
+    }
 }
